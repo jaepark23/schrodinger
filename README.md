@@ -20,6 +20,7 @@
 ## Results
 - Currently predicts on a ~70% clip
 ## Future
+- Organize existing code
 - Add new features/modify existing features to further improve accuracy
 - Train on more data
 - Data anaylsis on all features
