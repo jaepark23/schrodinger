@@ -13,10 +13,10 @@
 - Sklearn
 - BeautifulSoup
 ## What I did/learned
-- Building a neural network from scratch
-- Utilziing machine learning techniques such as regularization, feature engineering, feature selection
-- Data collection
-- Data cleanup/feature engineering
+- Built a neural network from scratch
+- Utilized machine learning techniques such as regularization, feature engineering, feature selection
+- Collected data from a variety of different sources
+- Cleaned up data and engineered custom features 
 ## Results
 - Currently predicts on a ~70% clip
 ## Future
