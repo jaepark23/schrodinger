@@ -19,8 +19,9 @@
 - Cleaned up data and engineered custom features 
 ## Results
 - Currently predicts on a ~70% clip
-## Future
+## In Progress
 - Organize existing code
 - Add new features/modify existing features to further improve accuracy
 - Train on more data
 - Data anaylsis on all features
+- Change neural network model structure 
