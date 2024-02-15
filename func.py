@@ -1,31 +1,27 @@
-from sklearn.model_selection import train_test_split
-
 from nba_api.stats.endpoints import TeamPlayerDashboard
 from nba_api.stats.static.teams import find_team_name_by_id
 from nba_api.stats.endpoints import LeagueDashTeamStats
+from nba_api.stats.endpoints import BoxScoreTraditionalV3
+from nba_api.live.nba.endpoints import ScoreBoard
 
 import pandas as pd
 import numpy as np
 import re
 from datetime import date
+import joblib
+import pickle as pk
+import keras
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import joblib
-
-from nba_api.live.nba.endpoints import ScoreBoard
 import time
-import openpyxl
-import keras
-from sklearn.decomposition import PCA
-import pickle as pk
-from nba_api.stats.endpoints import BoxScoreTraditionalV3
-
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import bs4
 
-features = ['W_PCT', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'TOV', 'STL', 'BLK', 'BLKA', 'PF', 'PFD', 'PTS', 'PLUS_MINUS', 'OFF_RATING', 'DEF_RATING', 'NET_RATING', 'AST_PCT', 'AST_TO', 'AST_RATIO', 'OREB_PCT', 'DREB_PCT', 'REB_PCT', 'TM_TOV_PCT', 'EFG_PCT', 'TS_PCT', 'E_PACE', 'PACE', 'PACE_PER40', 'POSS', 'PIE', 'PCT_FGA_2PT', 'PCT_FGA_3PT', 'PCT_PTS_2PT', 'PCT_PTS_2PT_MR', 'PCT_PTS_3PT', 'PCT_PTS_FB', 'PCT_PTS_FT', 'PCT_PTS_OFF_TOV', 'PCT_PTS_PAINT', 'PCT_AST_2PM', 'PCT_UAST_2PM', 'PCT_AST_3PM', 'PCT_UAST_3PM', 'PCT_AST_FGM', 'PCT_UAST_FGM', 'OPP_FGM', 'OPP_FGA', 'OPP_FG_PCT', 'OPP_FG3M', 'OPP_FG3A', 'OPP_FG3_PCT', 'OPP_FTM', 'OPP_FTA', 'OPP_FT_PCT', 'OPP_OREB', 'OPP_DREB', 'OPP_REB', 'OPP_AST', 'OPP_TOV', 'OPP_STL', 'OPP_BLK', 'OPP_BLKA', 'OPP_PF', 'OPP_PFD', 'OPP_PTS', 'OPP_PTS_OFF_TOV', 'OPP_PTS_2ND_CHANCE', 'OPP_PTS_FB', 'OPP_PTS_PAINT', 'LAST_10_W_PCT', 'TEAM_POWER', 'W_PCT1', 'FGM1', 'FGA1', 'FG_PCT1', 'FG3M1', 'FG3A1', 'FG3_PCT1', 'FTM1', 'FTA1', 'FT_PCT1', 'OREB1', 'DREB1', 'REB1', 'AST1', 'TOV1', 'STL1', 'BLK1', 'BLKA1', 'PF1', 'PFD1', 'PTS1', 'PLUS_MINUS1', 'OFF_RATING1', 'DEF_RATING1', 'NET_RATING1', 'AST_PCT1', 'AST_TO1', 'AST_RATIO1', 'OREB_PCT1', 'DREB_PCT1', 'REB_PCT1', 'TM_TOV_PCT1', 'EFG_PCT1', 'TS_PCT1', 'E_PACE1', 'PACE1', 'PACE_PER401', 'POSS1', 'PIE1', 'PCT_FGA_2PT1', 'PCT_FGA_3PT1', 'PCT_PTS_2PT1', 'PCT_PTS_2PT_MR1', 'PCT_PTS_3PT1', 'PCT_PTS_FB1', 'PCT_PTS_FT1', 'PCT_PTS_OFF_TOV1', 'PCT_PTS_PAINT1', 'PCT_AST_2PM1', 'PCT_UAST_2PM1', 'PCT_AST_3PM1', 'PCT_UAST_3PM1', 'PCT_AST_FGM1', 'PCT_UAST_FGM1', 'OPP_FGM1', 'OPP_FGA1', 'OPP_FG_PCT1', 'OPP_FG3M1', 'OPP_FG3A1', 'OPP_FG3_PCT1', 'OPP_FTM1', 'OPP_FTA1', 'OPP_FT_PCT1', 'OPP_OREB1', 'OPP_DREB1', 'OPP_REB1', 'OPP_AST1', 'OPP_TOV1', 'OPP_STL1', 'OPP_BLK1', 'OPP_BLKA1', 'OPP_PF1', 'OPP_PFD1', 'OPP_PTS1', 'OPP_PTS_OFF_TOV1', 'OPP_PTS_2ND_CHANCE1', 'OPP_PTS_FB1', 'OPP_PTS_PAINT1', 'LAST_10_W_PCT1', 'TEAM_POWER1']
+featuresv1 = ['W_PCT', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'TOV', 'STL', 'BLK', 'BLKA', 'PF', 'PFD', 'PTS', 'PLUS_MINUS', 'OFF_RATING', 'DEF_RATING', 'NET_RATING', 'AST_PCT', 'AST_TO', 'AST_RATIO', 'OREB_PCT', 'DREB_PCT', 'REB_PCT', 'TM_TOV_PCT', 'EFG_PCT', 'TS_PCT', 'E_PACE', 'PACE', 'PACE_PER40', 'POSS', 'PIE', 'PCT_FGA_2PT', 'PCT_FGA_3PT', 'PCT_PTS_2PT', 'PCT_PTS_2PT_MR', 'PCT_PTS_3PT', 'PCT_PTS_FB', 'PCT_PTS_FT', 'PCT_PTS_OFF_TOV', 'PCT_PTS_PAINT', 'PCT_AST_2PM', 'PCT_UAST_2PM', 'PCT_AST_3PM', 'PCT_UAST_3PM', 'PCT_AST_FGM', 'PCT_UAST_FGM', 'OPP_FGM', 'OPP_FGA', 'OPP_FG_PCT', 'OPP_FG3M', 'OPP_FG3A', 'OPP_FG3_PCT', 'OPP_FTM', 'OPP_FTA', 'OPP_FT_PCT', 'OPP_OREB', 'OPP_DREB', 'OPP_REB', 'OPP_AST', 'OPP_TOV', 'OPP_STL', 'OPP_BLK', 'OPP_BLKA', 'OPP_PF', 'OPP_PFD', 'OPP_PTS', 'OPP_PTS_OFF_TOV', 'OPP_PTS_2ND_CHANCE', 'OPP_PTS_FB', 'OPP_PTS_PAINT', 'LAST_10_W_PCT', 'TEAM_POWER', 'W_PCT1', 'FGM1', 'FGA1', 'FG_PCT1', 'FG3M1', 'FG3A1', 'FG3_PCT1', 'FTM1', 'FTA1', 'FT_PCT1', 'OREB1', 'DREB1', 'REB1', 'AST1', 'TOV1', 'STL1', 'BLK1', 'BLKA1', 'PF1', 'PFD1', 'PTS1', 'PLUS_MINUS1', 'OFF_RATING1', 'DEF_RATING1', 'NET_RATING1', 'AST_PCT1', 'AST_TO1', 'AST_RATIO1', 'OREB_PCT1', 'DREB_PCT1', 'REB_PCT1', 'TM_TOV_PCT1', 'EFG_PCT1', 'TS_PCT1', 'E_PACE1', 'PACE1', 'PACE_PER401', 'POSS1', 'PIE1', 'PCT_FGA_2PT1', 'PCT_FGA_3PT1', 'PCT_PTS_2PT1', 'PCT_PTS_2PT_MR1', 'PCT_PTS_3PT1', 'PCT_PTS_FB1', 'PCT_PTS_FT1', 'PCT_PTS_OFF_TOV1', 'PCT_PTS_PAINT1', 'PCT_AST_2PM1', 'PCT_UAST_2PM1', 'PCT_AST_3PM1', 'PCT_UAST_3PM1', 'PCT_AST_FGM1', 'PCT_UAST_FGM1', 'OPP_FGM1', 'OPP_FGA1', 'OPP_FG_PCT1', 'OPP_FG3M1', 'OPP_FG3A1', 'OPP_FG3_PCT1', 'OPP_FTM1', 'OPP_FTA1', 'OPP_FT_PCT1', 'OPP_OREB1', 'OPP_DREB1', 'OPP_REB1', 'OPP_AST1', 'OPP_TOV1', 'OPP_STL1', 'OPP_BLK1', 'OPP_BLKA1', 'OPP_PF1', 'OPP_PFD1', 'OPP_PTS1', 'OPP_PTS_OFF_TOV1', 'OPP_PTS_2ND_CHANCE1', 'OPP_PTS_FB1', 'OPP_PTS_PAINT1', 'LAST_10_W_PCT1', 'TEAM_POWER1']
+
+featuresv2 = ['FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'TOV', 'STL', 'BLK', 'BLKA', 'PF', 'PFD', 'PTS', 'PLUS_MINUS', 'OFF_RATING', 'DEF_RATING', 'NET_RATING', 'AST_PCT', 'AST_TO', 'AST_RATIO', 'OREB_PCT', 'DREB_PCT', 'REB_PCT', 'TM_TOV_PCT', 'EFG_PCT', 'TS_PCT', 'E_PACE', 'PACE', 'PACE_PER40', 'POSS', 'PIE', 'PCT_FGA_2PT', 'PCT_FGA_3PT', 'PCT_PTS_2PT', 'PCT_PTS_2PT_MR', 'PCT_PTS_3PT', 'PCT_PTS_FB', 'PCT_PTS_FT', 'PCT_PTS_OFF_TOV', 'PCT_PTS_PAINT', 'PCT_AST_2PM', 'PCT_UAST_2PM', 'PCT_AST_3PM', 'PCT_UAST_3PM', 'PCT_AST_FGM', 'PCT_UAST_FGM', 'OPP_FGM', 'OPP_FGA', 'OPP_FG_PCT', 'OPP_FG3M', 'OPP_FG3A', 'OPP_FG3_PCT', 'OPP_FTM', 'OPP_FTA', 'OPP_FT_PCT', 'OPP_OREB', 'OPP_DREB', 'OPP_REB', 'OPP_AST', 'OPP_TOV', 'OPP_STL', 'OPP_BLK', 'OPP_BLKA', 'OPP_PF', 'OPP_PFD', 'OPP_PTS', 'OPP_PTS_OFF_TOV', 'OPP_PTS_2ND_CHANCE', 'OPP_PTS_FB', 'OPP_PTS_PAINT', 'LAST_10_W_PCT', 'TEAM_POWER', 'W_PCT1', 'FGM1', 'FGA1', 'FG_PCT1', 'FG3M1', 'FG3A1', 'FG3_PCT1', 'FTM1', 'FTA1', 'FT_PCT1', 'OREB1', 'DREB1', 'REB1', 'AST1', 'TOV1', 'STL1', 'BLK1', 'BLKA1', 'PF1', 'PFD1', 'PTS1', 'PLUS_MINUS1', 'OFF_RATING1', 'DEF_RATING1', 'NET_RATING1', 'AST_PCT1', 'AST_TO1', 'AST_RATIO1', 'OREB_PCT1', 'DREB_PCT1', 'REB_PCT1', 'TM_TOV_PCT1', 'EFG_PCT1', 'TS_PCT1', 'E_PACE1', 'PACE1', 'PACE_PER401', 'POSS1', 'PIE1', 'PCT_FGA_2PT1', 'PCT_FGA_3PT1', 'PCT_PTS_2PT1', 'PCT_PTS_2PT_MR1', 'PCT_PTS_3PT1', 'PCT_PTS_FB1', 'PCT_PTS_FT1', 'PCT_PTS_OFF_TOV1', 'PCT_PTS_PAINT1', 'PCT_AST_2PM1', 'PCT_UAST_2PM1', 'PCT_AST_3PM1', 'PCT_UAST_3PM1', 'PCT_AST_FGM1', 'PCT_UAST_FGM1', 'OPP_FGM1', 'OPP_FGA1', 'OPP_FG_PCT1', 'OPP_FG3M1', 'OPP_FG3A1', 'OPP_FG3_PCT1', 'OPP_FTM1', 'OPP_FTA1', 'OPP_FT_PCT1', 'OPP_OREB1', 'OPP_DREB1', 'OPP_REB1', 'OPP_AST1', 'OPP_TOV1', 'OPP_STL1', 'OPP_BLK1', 'OPP_BLKA1', 'OPP_PF1', 'OPP_PFD1', 'OPP_PTS1', 'OPP_PTS_OFF_TOV1', 'OPP_PTS_2ND_CHANCE1', 'OPP_PTS_FB1', 'OPP_PTS_PAINT1', 'LAST_10_W_PCT1', 'TEAM_POWER1']
+# removed 'W_PCT'
 
 scope = [
         "https://spreadsheets.google.com/feeds",
@@ -156,9 +152,12 @@ def append_data_to_sheet(sheet_name: str, data: list):
 
 def find_team_name(tag: bs4.element.Tag) -> str:
     """
-    finds and returns: team_name from a bs4 tag
+    Finds team name from a bs4 tag pulled previously
+
+    Returns:
+    team_name (str) : team name
     """
-    pattern = r">(.*?)<\/a>"
+    pattern = r">(.*?)<\/a>" # regex pattern 
     team_name = str(tag.find_all(class_="TeamName")[0])
     team_name = re.search(pattern, team_name).group(1)
     team_name = team_name.split(">", 1)[-1]
@@ -168,7 +167,9 @@ def find_team_name(tag: bs4.element.Tag) -> str:
 def find_injuriesv2() -> dict:
     """
     CBSSports injury list (more accurate and up to date)
-    returns: dict of injuries team_abbr : list of injured players
+
+    Returns: 
+    injuries (dict) : injured players around the league in {"team_abbr" : [injured players]} format
     """
     injuries = {}
     r = requests.get("https://www.cbssports.com/nba/injuries/")
@@ -186,17 +187,32 @@ def find_injuriesv2() -> dict:
     return injuries
 
 
-def prep_training_data(data: pd.DataFrame, features) -> (list, list):
+def prep_training_data(data: pd.DataFrame, features):
+    """
+    Prepares data for model training by separating independent and dependent variables
+
+    data (pd.DataFrame) : data prepared for training
+    features (list) : specified features to filter
+
+    Returns:
+    X[features].values (list) : independent variables filtered by features in list format
+    y (list) : dependent variables in list format
+    """
     X = data.drop("HOME_TEAM_WIN", axis=1)
     y = pd.get_dummies(data, columns=["HOME_TEAM_WIN"], prefix="Result")[
         "Result_W"
-    ].values
+    ].values # change W L to 0s and 1s
     return X[features].values, y
 
 
 def scale_scores(scores: list) -> list:
     """
-    scale team power score to total of 100
+    Scales player importance scores on a team to add up to 100
+
+    scores (list) : player importance scores
+
+    Returns:
+    scaled_values (list) : scaled player importance scores 
     """
     total = sum(scores)
     scaled_values = [value / total * 100 for value in scores]
@@ -204,6 +220,15 @@ def scale_scores(scores: list) -> list:
 
 
 def calculate_team_power(team_id: int, injuries: dict) -> float:
+    """
+    Calculates feature engineered "Team Power" which is a number between 1-100 that determines how full power a team is (taking into account injuries)
+
+    team_id (int) : team id code from NBA API
+    injuries (dict) : dictionary of injured players all throughout the league {"team_abbr" : [injured_players]}
+
+    Returns:
+    team_power (float) : team power score 
+    """
     player_stats = TeamPlayerDashboard(
         team_id=team_id, per_mode_detailed="PerGame", season="2023-24"
     ).get_data_frames()[1]
@@ -226,6 +251,12 @@ def calculate_team_power(team_id: int, injuries: dict) -> float:
 
 
 def get_current_data() -> pd.DataFrame:
+    """
+    Retrieves current season data for real-time predicting purposes
+
+    Returns:
+    data (pd.DataFrame) : dataframe of all features we need in order to predict
+    """
     base = LeagueDashTeamStats(
         season="2023-24",
         measure_type_detailed_defense="Base",
@@ -266,12 +297,27 @@ def predict_winner(
     away_team_abbr: str,
     current_data: pd.DataFrame,
     features: list,
-    pca,
-    model,
+    pca_path : str,
+    model_path : str,
     injuries: dict,
     sheet_name: str,
     game_id: str,
+    scaler_path : str
 ):
+    """
+    Pipeline for real-time testing
+
+    home_team_abbr (str) : home team abbreviation (CHI, BOS,...)
+    home_team_abbr (str) : away team abbreviation (LAL, LAC,...)
+    current_data (pd.DataFrame) : current season data for both teams used for training/predicting
+    features (list) : list of features to use to predict
+    pca_path (str) : file path for PCA 
+    model_path (str) : Keras NN model file path
+    injuries (dict) : Dictionary of injuries around the league {"team_abbr" : [injured_players]}
+    sheet_name (str) : Personal use for Google Sheets
+    game_id (str) : Game ID of the game to predict
+    scaler_path (str) : file path for scaler 
+    """
     home_team_id = team_abbr_to_id_dict[home_team_abbr]
     away_team_id = team_abbr_to_id_dict[away_team_abbr]
 
@@ -298,11 +344,17 @@ def predict_winner(
         features
     ].values
 
-    scaler = joblib.load("./models/scaler.save")
+    scaler = joblib.load(scaler_path)
     test_data = scaler.transform(test_data)
+
+    pca = pk.load(open(pca_path,'rb'))
     test_data = pca.transform(test_data)
+
     test_data = np.array(test_data).reshape(1, -1)
+
+    model = keras.models.load_model(model_path)
     result = model.predict(test_data)
+
     home_team_win_percentage = result
     away_team_win_percentage = 1 - home_team_win_percentage
 
@@ -326,7 +378,7 @@ def predict_winner(
     print(away_team_abbr + ": " + str(away_team_win_percentage[0][0]))
 
 
-def predict_games(NN_model, precision_NN_model, recall_NN_model):
+def predict_games():
     """
     predicts today's games and appends results to google sheets for each model type 
     """
@@ -334,8 +386,8 @@ def predict_games(NN_model, precision_NN_model, recall_NN_model):
     current_data = get_current_data()
     injuries = find_injuriesv2()
 
+    # accuracy v2 model testing
     for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
-        pca = pk.load(open("./models/accuracy_pca.pkl",'rb'))
         game_id = game_dict["gameId"]
         home_team_abbr = game_dict["homeTeam"]["teamTricode"]
         away_team_abbr = game_dict["awayTeam"]["teamTricode"]
@@ -343,16 +395,37 @@ def predict_games(NN_model, precision_NN_model, recall_NN_model):
             home_team_abbr,
             away_team_abbr,
             current_data,
-            features,
-            pca,
-            NN_model,
+            featuresv2,
+            "./models/v2/accuracy_pca.pkl",
+            "./models/v2/accuracy_model.keras",
+            injuries,
+            "accuracyv2",
+            game_id,
+            "./models/v2/accuracy_scaler.save"
+        )
+        time.sleep(3)
+
+    # accuracy model testing
+    for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
+        game_id = game_dict["gameId"]
+        home_team_abbr = game_dict["homeTeam"]["teamTricode"]
+        away_team_abbr = game_dict["awayTeam"]["teamTricode"]
+        predict_winner(
+            home_team_abbr,
+            away_team_abbr,
+            current_data,
+            featuresv1,
+            "./models/v1/accuracy_pca.pkl",
+            "./models/v1/accuracy_model.keras",
             injuries,
             "accuracy",
             game_id,
+            "./models/v1/scaler.save"
         )
         time.sleep(3)
+
+    # precision model testing
     for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
-        pca = pk.load(open("./models/precision_pca.pkl",'rb'))
         game_id = game_dict["gameId"]
         home_team_abbr = game_dict["homeTeam"]["teamTricode"]
         away_team_abbr = game_dict["awayTeam"]["teamTricode"]
@@ -360,17 +433,18 @@ def predict_games(NN_model, precision_NN_model, recall_NN_model):
             home_team_abbr,
             away_team_abbr,
             current_data,
-            features,
-            pca,
-            precision_NN_model,
+            featuresv1,
+            "./models/v1/precision_pca.pkl",
+            "./models/v1/precision_model.keras",
             injuries,
             "precision",
             game_id,
+            "./models/v1/scaler.save"
         )
         time.sleep(3)
 
+    # recall model testing
     for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
-        pca = pk.load(open("./models/recall_pca.pkl",'rb'))
         game_id = game_dict["gameId"]
         home_team_abbr = game_dict["homeTeam"]["teamTricode"]
         away_team_abbr = game_dict["awayTeam"]["teamTricode"]
@@ -378,26 +452,27 @@ def predict_games(NN_model, precision_NN_model, recall_NN_model):
             home_team_abbr,
             away_team_abbr,
             current_data,
-            features,
-            pca,
-            recall_NN_model,
+            featuresv1,
+            "./models/v1/recall_pca.pkl",
+            "./models/v1/recall_model.keras",
             injuries,
             "recall",
             game_id,
+            "./models/v1/scaler.save"
         )
         time.sleep(3)
 
+
 def find_results():
     """
-    find results of predicted games and append results to google sheets for each model 
+    Find results of predicted games and append results to google sheets for each model 
     """
-
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         "api_key.json", scope
     )
     gc = gspread.authorize(credentials)
     spreadsheet = gc.open("schrodinger")
-    worksheet = spreadsheet.worksheet("accuracy")
+    worksheet = spreadsheet.worksheet("accuracyv2")
     truths = []
 
     for row_index, row_data in enumerate(worksheet.get_all_values()[1:], start=2):
@@ -438,7 +513,7 @@ def find_results():
                     print("updated")
                 time.sleep(3)
 
-    for sheet_name in ["precision", "recall"]:
+    for sheet_name in ["accuracy", "precision", "recall"]:
         spreadsheet = gc.open("schrodinger")
         worksheet = spreadsheet.worksheet(sheet_name)
         for truth in truths:
