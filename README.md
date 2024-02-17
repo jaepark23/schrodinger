@@ -12,6 +12,7 @@
 - Pandas
 - Sklearn
 - BeautifulSoup
+- Odds API
 ## What I did/learned
 - Built a neural network from scratch
 - Utilized machine learning techniques such as regularization, feature engineering, feature selection
