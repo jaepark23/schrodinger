@@ -17,128 +17,38 @@ import time
 import requests
 from bs4 import BeautifulSoup
 import bs4
+import os
+from constants import featuresv1, featuresv2, player_columns_minus_name_v2, city_to_abbr_dict, team_abbr_to_name, team_abbr_to_id_dict, team_name_to_abbreviation, scope
 
-featuresv1 = ['W_PCT', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'TOV', 'STL', 'BLK', 'BLKA', 'PF', 'PFD', 'PTS', 'PLUS_MINUS', 'OFF_RATING', 'DEF_RATING', 'NET_RATING', 'AST_PCT', 'AST_TO', 'AST_RATIO', 'OREB_PCT', 'DREB_PCT', 'REB_PCT', 'TM_TOV_PCT', 'EFG_PCT', 'TS_PCT', 'E_PACE', 'PACE', 'PACE_PER40', 'POSS', 'PIE', 'PCT_FGA_2PT', 'PCT_FGA_3PT', 'PCT_PTS_2PT', 'PCT_PTS_2PT_MR', 'PCT_PTS_3PT', 'PCT_PTS_FB', 'PCT_PTS_FT', 'PCT_PTS_OFF_TOV', 'PCT_PTS_PAINT', 'PCT_AST_2PM', 'PCT_UAST_2PM', 'PCT_AST_3PM', 'PCT_UAST_3PM', 'PCT_AST_FGM', 'PCT_UAST_FGM', 'OPP_FGM', 'OPP_FGA', 'OPP_FG_PCT', 'OPP_FG3M', 'OPP_FG3A', 'OPP_FG3_PCT', 'OPP_FTM', 'OPP_FTA', 'OPP_FT_PCT', 'OPP_OREB', 'OPP_DREB', 'OPP_REB', 'OPP_AST', 'OPP_TOV', 'OPP_STL', 'OPP_BLK', 'OPP_BLKA', 'OPP_PF', 'OPP_PFD', 'OPP_PTS', 'OPP_PTS_OFF_TOV', 'OPP_PTS_2ND_CHANCE', 'OPP_PTS_FB', 'OPP_PTS_PAINT', 'LAST_10_W_PCT', 'TEAM_POWER', 'W_PCT1', 'FGM1', 'FGA1', 'FG_PCT1', 'FG3M1', 'FG3A1', 'FG3_PCT1', 'FTM1', 'FTA1', 'FT_PCT1', 'OREB1', 'DREB1', 'REB1', 'AST1', 'TOV1', 'STL1', 'BLK1', 'BLKA1', 'PF1', 'PFD1', 'PTS1', 'PLUS_MINUS1', 'OFF_RATING1', 'DEF_RATING1', 'NET_RATING1', 'AST_PCT1', 'AST_TO1', 'AST_RATIO1', 'OREB_PCT1', 'DREB_PCT1', 'REB_PCT1', 'TM_TOV_PCT1', 'EFG_PCT1', 'TS_PCT1', 'E_PACE1', 'PACE1', 'PACE_PER401', 'POSS1', 'PIE1', 'PCT_FGA_2PT1', 'PCT_FGA_3PT1', 'PCT_PTS_2PT1', 'PCT_PTS_2PT_MR1', 'PCT_PTS_3PT1', 'PCT_PTS_FB1', 'PCT_PTS_FT1', 'PCT_PTS_OFF_TOV1', 'PCT_PTS_PAINT1', 'PCT_AST_2PM1', 'PCT_UAST_2PM1', 'PCT_AST_3PM1', 'PCT_UAST_3PM1', 'PCT_AST_FGM1', 'PCT_UAST_FGM1', 'OPP_FGM1', 'OPP_FGA1', 'OPP_FG_PCT1', 'OPP_FG3M1', 'OPP_FG3A1', 'OPP_FG3_PCT1', 'OPP_FTM1', 'OPP_FTA1', 'OPP_FT_PCT1', 'OPP_OREB1', 'OPP_DREB1', 'OPP_REB1', 'OPP_AST1', 'OPP_TOV1', 'OPP_STL1', 'OPP_BLK1', 'OPP_BLKA1', 'OPP_PF1', 'OPP_PFD1', 'OPP_PTS1', 'OPP_PTS_OFF_TOV1', 'OPP_PTS_2ND_CHANCE1', 'OPP_PTS_FB1', 'OPP_PTS_PAINT1', 'LAST_10_W_PCT1', 'TEAM_POWER1']
+odds_api_key = os.environ.get("ODDS_API_KEY")
+endpoint = f"https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?regions=us&markets=h2h&apiKey={odds_api_key}"
 
-featuresv2 = ['FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'TOV', 'STL', 'BLK', 'BLKA', 'PF', 'PFD', 'PTS', 'PLUS_MINUS', 'OFF_RATING', 'DEF_RATING', 'NET_RATING', 'AST_PCT', 'AST_TO', 'AST_RATIO', 'OREB_PCT', 'DREB_PCT', 'REB_PCT', 'TM_TOV_PCT', 'EFG_PCT', 'TS_PCT', 'E_PACE', 'PACE', 'PACE_PER40', 'POSS', 'PIE', 'PCT_FGA_2PT', 'PCT_FGA_3PT', 'PCT_PTS_2PT', 'PCT_PTS_2PT_MR', 'PCT_PTS_3PT', 'PCT_PTS_FB', 'PCT_PTS_FT', 'PCT_PTS_OFF_TOV', 'PCT_PTS_PAINT', 'PCT_AST_2PM', 'PCT_UAST_2PM', 'PCT_AST_3PM', 'PCT_UAST_3PM', 'PCT_AST_FGM', 'PCT_UAST_FGM', 'OPP_FGM', 'OPP_FGA', 'OPP_FG_PCT', 'OPP_FG3M', 'OPP_FG3A', 'OPP_FG3_PCT', 'OPP_FTM', 'OPP_FTA', 'OPP_FT_PCT', 'OPP_OREB', 'OPP_DREB', 'OPP_REB', 'OPP_AST', 'OPP_TOV', 'OPP_STL', 'OPP_BLK', 'OPP_BLKA', 'OPP_PF', 'OPP_PFD', 'OPP_PTS', 'OPP_PTS_OFF_TOV', 'OPP_PTS_2ND_CHANCE', 'OPP_PTS_FB', 'OPP_PTS_PAINT', 'LAST_10_W_PCT', 'TEAM_POWER', 'W_PCT1', 'FGM1', 'FGA1', 'FG_PCT1', 'FG3M1', 'FG3A1', 'FG3_PCT1', 'FTM1', 'FTA1', 'FT_PCT1', 'OREB1', 'DREB1', 'REB1', 'AST1', 'TOV1', 'STL1', 'BLK1', 'BLKA1', 'PF1', 'PFD1', 'PTS1', 'PLUS_MINUS1', 'OFF_RATING1', 'DEF_RATING1', 'NET_RATING1', 'AST_PCT1', 'AST_TO1', 'AST_RATIO1', 'OREB_PCT1', 'DREB_PCT1', 'REB_PCT1', 'TM_TOV_PCT1', 'EFG_PCT1', 'TS_PCT1', 'E_PACE1', 'PACE1', 'PACE_PER401', 'POSS1', 'PIE1', 'PCT_FGA_2PT1', 'PCT_FGA_3PT1', 'PCT_PTS_2PT1', 'PCT_PTS_2PT_MR1', 'PCT_PTS_3PT1', 'PCT_PTS_FB1', 'PCT_PTS_FT1', 'PCT_PTS_OFF_TOV1', 'PCT_PTS_PAINT1', 'PCT_AST_2PM1', 'PCT_UAST_2PM1', 'PCT_AST_3PM1', 'PCT_UAST_3PM1', 'PCT_AST_FGM1', 'PCT_UAST_FGM1', 'OPP_FGM1', 'OPP_FGA1', 'OPP_FG_PCT1', 'OPP_FG3M1', 'OPP_FG3A1', 'OPP_FG3_PCT1', 'OPP_FTM1', 'OPP_FTA1', 'OPP_FT_PCT1', 'OPP_OREB1', 'OPP_DREB1', 'OPP_REB1', 'OPP_AST1', 'OPP_TOV1', 'OPP_STL1', 'OPP_BLK1', 'OPP_BLKA1', 'OPP_PF1', 'OPP_PFD1', 'OPP_PTS1', 'OPP_PTS_OFF_TOV1', 'OPP_PTS_2ND_CHANCE1', 'OPP_PTS_FB1', 'OPP_PTS_PAINT1', 'LAST_10_W_PCT1', 'TEAM_POWER1']
-# removed 'W_PCT'
+def get_odds(response):
+    """
+    Retrieves today's odds for NBA games 
 
-scope = [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive",
-    ]
+    response (list) : list of today's games
+    Returns:
+    odds_dict (dict) : Dictionary of odds in {"team_abbr" : odds (int)} format
+    """
+    odds_dict = {}
+    for game in response:
+        first_bookmaker = game['bookmakers'][0] # first bookmaker in list of bookmakers (idc which bookmaker)
+        for market in first_bookmaker['markets']:
+            if market['key'] == 'h2h':
+                outcomes = market['outcomes']
+                for outcome in outcomes:
+                    team_name = outcome['name']
+                    team_abbr = team_name_to_abbreviation[team_name]
+                    decimal_odds = outcome['price']
+                    if decimal_odds >= 2:
+                        american_odds = (decimal_odds - 1) * 100
+                    else:
+                        american_odds = (-100) / (decimal_odds - 1)
+                    odds_dict[team_abbr] = round(american_odds)
+    return odds_dict
 
-player_columns_minus_name_v2 = [
-    "MIN",
-    "FGM",
-    "FGA",
-    "FG3M",
-    "FG3A",
-    "REB",
-    "AST",
-    "STL",
-    "BLK",
-    "PLUS_MINUS",
-]
-
-city_to_abbr_dict = {
-    "Atlanta": "ATL",
-    "Boston": "BOS",
-    "Brooklyn": "BKN",
-    "Charlotte": "CHA",
-    "Chicago": "CHI",
-    "Cleveland": "CLE",
-    "Dallas": "DAL",
-    "Denver": "DEN",
-    "Detroit": "DET",
-    "Golden St.": "GSW",
-    "Houston": "HOU",
-    "Indiana": "IND",
-    "L.A. Clippers": "LAC",
-    "L.A. Lakers": "LAL",
-    "Memphis": "MEM",
-    "Miami": "MIA",
-    "Milwaukee": "MIL",
-    "Minnesota": "MIN",
-    "New Orleans": "NOP",
-    "New York": "NYK",
-    "Oklahoma City": "OKC",
-    "Orlando": "ORL",
-    "Philadelphia": "PHI",
-    "Phoenix": "PHO",
-    "Portland": "POR",
-    "Utah": "UTA",
-    "San Antonio": "SAS",
-    "Sacramento": "SAC",
-    "Toronto": "TOR",
-    "Washington": "WAS",
-}
-team_abbr_to_name = {
-    "ATL": "Atlanta Hawks",
-    "BOS": "Boston Celtics",
-    "CHA": "Charlotte Hornets",
-    "CHI": "Chicago Bulls",
-    "CLE": "Cleveland Cavaliers",
-    "DAL": "Dallas Mavericks",
-    "DEN": "Denver Nuggets",
-    "DET": "Detroit Pistons",
-    "GSW": "Golden State Warriors",
-    "HOU": "Houston Rockets",
-    "IND": "Indiana Pacers",
-    "LAC": "Los Angeles Clippers",
-    "LAL": "Los Angeles Lakers",
-    "MEM": "Memphis Grizzlies",
-    "MIA": "Miami Heat",
-    "MIL": "Milwaukee Bucks",
-    "MIN": "Minnesota Timberwolves",
-    "NOP": "New Orleans Pelicans",
-    "NYK": "New York Knicks",
-    "BKN": "Brooklyn Nets",
-    "OKC": "Oklahoma City Thunder",
-    "ORL": "Orlando Magic",
-    "PHI": "Philadelphia 76ers",
-    "PHX": "Phoenix Suns",
-    "POR": "Portland Trail Blazers",
-    "SAC": "Sacramento Kings",
-    "TOR": "Toronto Raptors",
-    "UTA": "Utah Jazz",
-    "WAS": "Washington Wizards",
-    "SAS": "San Antonio Spurs",
-}
-team_abbr_to_id_dict = {
-    "ATL": 1610612737,
-    "BOS": 1610612738,
-    "CLE": 1610612739,
-    "NOP": 1610612740,
-    "CHI": 1610612741,
-    "DAL": 1610612742,
-    "DEN": 1610612743,
-    "GSW": 1610612744,
-    "HOU": 1610612745,
-    "LAC": 1610612746,
-    "LAL": 1610612747,
-    "MIA": 1610612748,
-    "MIL": 1610612749,
-    "MIN": 1610612750,
-    "BKN": 1610612751,
-    "NYK": 1610612752,
-    "ORL": 1610612753,
-    "IND": 1610612754,
-    "PHI": 1610612755,
-    "PHX": 1610612756,
-    "POR": 1610612757,
-    "SAC": 1610612758,
-    "SAS": 1610612759,
-    "OKC": 1610612760,
-    "TOR": 1610612761,
-    "UTA": 1610612762,
-    "MEM": 1610612763,
-    "WAS": 1610612764,
-    "DET": 1610612765,
-    "CHA": 1610612766,
-}
-
-def append_data_to_sheet(sheet_name: str, data: list):
+def append_data_to_sheet(sheet_name: str, data: list, odds : dict):
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         "api_key.json", scope
     )
@@ -302,7 +212,8 @@ def predict_winner(
     injuries: dict,
     sheet_name: str,
     game_id: str,
-    scaler_path : str
+    scaler_path : str,
+    odds : dict
 ):
     """
     Pipeline for real-time testing
@@ -358,19 +269,25 @@ def predict_winner(
     home_team_win_percentage = result
     away_team_win_percentage = 1 - home_team_win_percentage
 
-    data = [
-            date.today().strftime("%m/%d/%Y"),
-            home_team_abbr,
-            away_team_abbr,
-            home_team_abbr
-            if home_team_win_percentage[0][0] > away_team_win_percentage[0][0]
-            else away_team_abbr,
-            float(home_team_win_percentage[0][0])
-            if home_team_win_percentage[0][0] > away_team_win_percentage[0][0]
-            else float(away_team_win_percentage[0][0]),
-            game_id,
-            None,
-        ]
+    if odds:
+        data = [
+                date.today().strftime("%m/%d/%Y"),
+                home_team_abbr,
+                away_team_abbr,
+                home_team_abbr
+                if home_team_win_percentage[0][0] > away_team_win_percentage[0][0]
+                else away_team_abbr,
+                float(home_team_win_percentage[0][0])
+                if home_team_win_percentage[0][0] > away_team_win_percentage[0][0]
+                else float(away_team_win_percentage[0][0]),
+                game_id,
+                None,
+                None,
+                odds[home_team_abbr] if home_team_win_percentage[0][0] > away_team_win_percentage[0][0]
+                else odds[away_team_abbr],
+                odds[away_team_abbr] if home_team_win_percentage[0][0] > away_team_win_percentage[0][0]
+                else odds[home_team_abbr] 
+            ]
     
     append_data_to_sheet(sheet_name, data)
 
@@ -385,7 +302,12 @@ def predict_games():
     scoreboard = ScoreBoard()
     current_data = get_current_data()
     injuries = find_injuriesv2()
-
+    response = requests.get(endpoint)
+    if response.status_code == 200:
+        odds = get_odds(response.json())
+    else:
+        odds = {}
+    
     # accuracy v2 model testing
     for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
         game_id = game_dict["gameId"]
@@ -401,7 +323,8 @@ def predict_games():
             injuries,
             "accuracyv2",
             game_id,
-            "./models/v2/accuracy_scaler.save"
+            "./models/v2/accuracy_scaler.save",
+            odds
         )
         time.sleep(3)
 
@@ -420,7 +343,8 @@ def predict_games():
             injuries,
             "accuracy",
             game_id,
-            "./models/v1/scaler.save"
+            "./models/v1/scaler.save",
+            odds
         )
         time.sleep(3)
 
@@ -439,7 +363,8 @@ def predict_games():
             injuries,
             "precision",
             game_id,
-            "./models/v1/scaler.save"
+            "./models/v1/scaler.save",
+            odds
         )
         time.sleep(3)
 
@@ -458,7 +383,8 @@ def predict_games():
             injuries,
             "recall",
             game_id,
-            "./models/v1/scaler.save"
+            "./models/v1/scaler.save",
+            odds
         )
         time.sleep(3)
 
