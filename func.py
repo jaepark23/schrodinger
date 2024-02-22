@@ -20,14 +20,12 @@ import bs4
 import os
 from constants import featuresv1, featuresv2, player_columns_minus_name_v2, city_to_abbr_dict, team_abbr_to_name, team_abbr_to_id_dict, team_name_to_abbreviation, scope
 
-odds_api_key = os.environ.get("ODDS_API_KEY")
-endpoint = f"https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?regions=us&markets=h2h&apiKey={odds_api_key}"
-
-def get_odds(response):
+def get_odds(response : list):
     """
     Retrieves today's odds for NBA games 
 
-    response (list) : list of today's games
+    response (list) : list of today's games from API call
+
     Returns:
     odds_dict (dict) : Dictionary of odds in {"team_abbr" : odds (int)} format
     """
@@ -48,7 +46,7 @@ def get_odds(response):
                     odds_dict[team_abbr] = round(american_odds)
     return odds_dict
 
-def append_data_to_sheet(sheet_name: str, data: list, odds : dict):
+def append_data_to_sheet(sheet_name: str, data: list):
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         "api_key.json", scope
     )
@@ -97,7 +95,7 @@ def find_injuriesv2() -> dict:
     return injuries
 
 
-def prep_training_data(data: pd.DataFrame, features):
+def prep_training_data(data: pd.DataFrame, features : list):
     """
     Prepares data for model training by separating independent and dependent variables
 
@@ -216,7 +214,7 @@ def predict_winner(
     odds : dict
 ):
     """
-    Pipeline for real-time testing
+    Pipeline for real-time prediction, predicts and appends results to google sheets
 
     home_team_abbr (str) : home team abbreviation (CHI, BOS,...)
     home_team_abbr (str) : away team abbreviation (LAL, LAC,...)
@@ -294,85 +292,58 @@ def predict_winner(
     print(home_team_abbr + ": " + str(home_team_win_percentage[0][0]))
     print(away_team_abbr + ": " + str(away_team_win_percentage[0][0]))
 
-
-def predict_games():
+def predict_game(game_id : str, home_team_abbr : str, away_team_abbr : str, current_data : pd.DataFrame, injuries : dict, odds : dict):
     """
-    predicts today's games and appends results to google sheets for each model type 
+    Predicts single game, used for auto prediction system 
+
+    Returns True or False for success
     """
-    scoreboard = ScoreBoard()
-    current_data = get_current_data()
-    injuries = find_injuriesv2()
-    response = requests.get(endpoint)
-    if response.status_code == 200:
-        odds = get_odds(response.json())
-    else:
-        odds = {}
-    
-    # accuracy v2 model testing
-    for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
-        game_id = game_dict["gameId"]
-        home_team_abbr = game_dict["homeTeam"]["teamTricode"]
-        away_team_abbr = game_dict["awayTeam"]["teamTricode"]
+    try:
         predict_winner(
-            home_team_abbr,
-            away_team_abbr,
-            current_data,
-            featuresv2,
-            "./models/v2/accuracy_pca.pkl",
-            "./models/v2/accuracy_model.keras",
-            injuries,
-            "accuracyv2",
-            game_id,
-            "./models/v2/accuracy_scaler.save",
-            odds
-        )
+                home_team_abbr,
+                away_team_abbr,
+                current_data,
+                featuresv2,
+                "./models/v2/accuracy_pca.pkl",
+                "./models/v2/accuracy_model.keras",
+                injuries,
+                "accuracyv2",
+                game_id,
+                "./models/v2/accuracy_scaler.save",
+                odds
+            )
         time.sleep(3)
 
-    # accuracy model testing
-    for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
-        game_id = game_dict["gameId"]
-        home_team_abbr = game_dict["homeTeam"]["teamTricode"]
-        away_team_abbr = game_dict["awayTeam"]["teamTricode"]
         predict_winner(
-            home_team_abbr,
-            away_team_abbr,
-            current_data,
-            featuresv1,
-            "./models/v1/accuracy_pca.pkl",
-            "./models/v1/accuracy_model.keras",
-            injuries,
-            "accuracy",
-            game_id,
-            "./models/v1/scaler.save",
-            odds
-        )
+                home_team_abbr,
+                away_team_abbr,
+                current_data,
+                featuresv1,
+                "./models/v1/accuracy_pca.pkl",
+                "./models/v1/accuracy_model.keras",
+                injuries,
+                "accuracy",
+                game_id,
+                "./models/v1/scaler.save",
+                odds
+            )
         time.sleep(3)
 
-    # precision model testing
-    for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
-        game_id = game_dict["gameId"]
-        home_team_abbr = game_dict["homeTeam"]["teamTricode"]
-        away_team_abbr = game_dict["awayTeam"]["teamTricode"]
         predict_winner(
-            home_team_abbr,
-            away_team_abbr,
-            current_data,
-            featuresv1,
-            "./models/v1/precision_pca.pkl",
-            "./models/v1/precision_model.keras",
-            injuries,
-            "precision",
-            game_id,
-            "./models/v1/scaler.save",
-            odds
-        )
+                home_team_abbr,
+                away_team_abbr,
+                current_data,
+                featuresv1,
+                "./models/v1/precision_pca.pkl",
+                "./models/v1/precision_model.keras",
+                injuries,
+                "precision",
+                game_id,
+                "./models/v1/scaler.save",
+                odds
+            )
         time.sleep(3)
 
-    # recall model testing
-    for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
-        game_id = game_dict["gameId"]
-        home_team_abbr = game_dict["homeTeam"]["teamTricode"]
-        away_team_abbr = game_dict["awayTeam"]["teamTricode"]
         predict_winner(
             home_team_abbr,
             away_team_abbr,
@@ -387,7 +358,10 @@ def predict_games():
             odds
         )
         time.sleep(3)
-
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 def find_results():
     """
@@ -446,3 +420,22 @@ def find_results():
             worksheet.update_cell(truth[0], 7, truth[1])
             worksheet.update_cell(truth[0], 8, truth[2])
             time.sleep(3)
+
+def collect_games():
+    """
+    Collects today's NBA games using NBA api 
+
+    Returns:
+    games (list) : dictionary of games 
+    """
+    scoreboard = ScoreBoard()
+    games = []
+    for game_dict in scoreboard.get_dict()["scoreboard"]["games"]:
+        game_id = game_dict["gameId"]
+        home_team_abbr = game_dict["homeTeam"]["teamTricode"]
+        away_team_abbr = game_dict["awayTeam"]["teamTricode"]
+        game_time = game_dict['gameTimeUTC']
+        game_status = game_dict['gameStatus']
+        game_data = {"game_id" : game_id, "home_team_abbr" : home_team_abbr, "away_team_abbr" : away_team_abbr, "game_time" : game_time, "game_status" : game_status, "predicted" : False}
+        games.append(game_data)
+    return games
