@@ -18,7 +18,7 @@
 - Collected data from a variety of different sources
 - Cleaned up data and engineered custom features
 - Connect to Google Sheets
-- 
+- Auto prediction system that collects today's games and predicts them based on certain clauses
 ## Results
 - Currently predicts on a ~70% clip
 ## In Progress
