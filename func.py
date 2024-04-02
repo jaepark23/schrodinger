@@ -328,36 +328,6 @@ def predict_game(game_id : str, home_team_abbr : str, away_team_abbr : str, curr
                 odds
             )
         time.sleep(3)
-
-        predict_winner(
-                home_team_abbr,
-                away_team_abbr,
-                current_data,
-                featuresv1,
-                "./models/v1/precision_pca.pkl",
-                "./models/v1/precision_model.keras",
-                injuries,
-                "precision",
-                game_id,
-                "./models/v1/scaler.save",
-                odds
-            )
-        time.sleep(3)
-
-        predict_winner(
-            home_team_abbr,
-            away_team_abbr,
-            current_data,
-            featuresv1,
-            "./models/v1/recall_pca.pkl",
-            "./models/v1/recall_model.keras",
-            injuries,
-            "recall",
-            game_id,
-            "./models/v1/scaler.save",
-            odds
-        )
-        time.sleep(3)
         return True
     except Exception as e:
         print(e)
