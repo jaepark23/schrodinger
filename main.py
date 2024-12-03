@@ -15,5 +15,5 @@ if __name__ == "__main__":
         game_id = game['game_id']
         home_team_abbr = game['home_team_abbr']
         away_team_abbr = game['away_team_abbr']
-        PredictionTools.predict_game(home_team_abbr, away_team_abbr, current_data, FEATURES_V2, "./models/v2/pca.pkl", "./models/v2/model.keras", "./models/v2/scaler.save", injuries, "", game_id)
+        PredictionTools.predict_game(home_team_abbr, away_team_abbr, current_data, FEATURES_V2, "./models/v2/pca.pkl", "./models/v2/model.keras", "./models/v2/scaler.save", injuries, "", game_id, "2024-25")
         time.sleep(15)

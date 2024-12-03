@@ -137,20 +137,21 @@ class PredictionTools:
         scaled_values = [value / total * 100 for value in scores]
         return scaled_values
 
-    def calculate_team_power(team_id: int, injuries: dict) -> float:
+    def calculate_team_power(team_id: int, injuries: dict, season : str) -> float:
         """
         Calculates feature engineered "Team Power" which is a number between 1-100 that determines how full power a team is, 
         taking into account players available for a game.
 
         team_id (int) : team id code from NBA API
         injuries (dict) : dictionary of injured players all throughout the league {"team_abbr" : [injured_players]}
+        season (str) : current season to calculate off of
 
         Returns:
         (float) : team power score 
         """
         # collect player stats to calculate player importance. 
         player_stats = TeamPlayerDashboard(
-            team_id=team_id, per_mode_detailed="PerGame", season="2023-24"
+            team_id=team_id, per_mode_detailed="PerGame", season=season
         ).get_data_frames()[1]
         player_stats = player_stats.sort_values("MIN_RANK").iloc[0:8]
         player_stats["SCORE"] = player_stats[PLAYER_COLUMNS_MINUS_NAME_V2].sum(axis=1)
@@ -223,6 +224,7 @@ class PredictionTools:
         injuries: dict,
         sheet_name: str,
         game_id: str,
+        season : str,
         odds : dict = {}
     ) -> None:
         """
@@ -255,9 +257,9 @@ class PredictionTools:
         away_team_stats = current_data[
             current_data["TEAM_ID"] == away_team_id
         ]  # filter away team stats
-        home_team_stats["TEAM_POWER"] = PredictionTools.calculate_team_power(home_team_id, injuries)
+        home_team_stats["TEAM_POWER"] = PredictionTools.calculate_team_power(home_team_id, injuries, season)
         away_team_stats["TEAM_POWER"] = PredictionTools.calculate_team_power(
-            away_team_id, injuries
+            away_team_id, injuries, season
         )  # add team_power feature
 
         away_team_stats.columns = [col + "1" for col in away_team_stats.columns]
