@@ -1,0 +1,14 @@
+nba_api==1.4.1
+numpy==1.26.4
+requests==2.31.0
+urllib3==2.2.1
+pandas
+joblib
+keras
+gspread
+bs4
+python-dotenv
+tensorflow==2.15
+oauth2client
+pymongo
+scikit-learn

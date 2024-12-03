@@ -1,0 +1,10 @@
+.env
+api_key.json
+test.py
+data/
+.DS_Store
+__pycache__/
+/backburner
+/old_versions
+/env
+NN.ipynb
