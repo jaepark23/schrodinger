@@ -31,3 +31,4 @@
 - Activate the virtual environment: source env/bin/activate
 - Install the required libraries: pip install -r requirements.txt
 - Run main.py
+- NOTE that players listed as questionable are considered injured in this algorithm, so for most accurate results, its best to predict games right before the game starts
